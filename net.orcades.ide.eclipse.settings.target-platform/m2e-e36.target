@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?pde version="3.6"?>
+
+<target name="m2e-e36">
+<locations>
+<location includeAllPlatforms="false" includeMode="planner" type="InstallableUnit">
+<unit id="org.eclipse.platform.sdk" version="3.6.0.I20100608-0911"/>
+<repository location="http://download.eclipse.org/eclipse/updates/3.6"/>
+</location>
+<location includeAllPlatforms="false" includeMode="planner" type="InstallableUnit">
+<unit id="org.eclipse.emf.sdk.feature.group" version="2.6.0.v20100614-1136"/>
+<unit id="org.eclipse.gef.sdk.feature.group" version="3.6.0.v20100519-2050-7G7R-A5WNc7QL_fXBGjRZPUUiKPJ"/>
+<unit id="org.eclipse.zest.sdk.feature.group" version="1.2.0.v20100519-2050-679-8COKLDAKOXIEU_VWSfZdM9XR"/>
+<unit id="org.eclipse.gmf.runtime.sdk.feature.group" version="1.4.0.v20100603-2230-67G-9E9PW2g3kkWbiGMgIAsb7K_n"/>
+<unit id="org.eclipse.gmf.sdk.feature.group" version="2.3.0.v20100508-1742-7779-95sDcLbJSsdu7Xz-x9w7ogv"/>
+<unit id="org.eclipse.xsd.sdk.feature.group" version="2.6.0.v20100614-1136"/>
+<unit id="org.eclipse.jdt.feature.group" version="3.6.0.v20100526-0800-7z8XFUJFMTfCWGoVuHImpms9H155"/>
+<repository location="http://download.eclipse.org/releases/helios"/>
+</location>
+<location includeAllPlatforms="false" includeMode="planner" type="InstallableUnit">
+<unit id="org.maven.ide.eclipse.feature.feature.group" version="0.10.2.20100623-1649"/>
+<repository location="http://m2eclipse.sonatype.org/sites/m2e"/>
+</location>
+<location includeAllPlatforms="false" includeMode="planner" type="InstallableUnit">
+<unit id="org.eclipse.wst.common.fproj.feature.group" version="3.2.1.v201007151559-377A88s73533F5H384A"/>
+<unit id="org.eclipse.jst.enterprise_ui.feature.feature.group" version="3.2.1.v201006240600-7b7GHYKFSK2WBLPnDskt-bYEOrRh"/>
+<unit id="org.eclipse.wst.web_ui.feature.feature.group" version="3.2.1.v201007071800-7O7CFbBEMf84nSIGRvUy2Pq4fbXf"/>
+<unit id="org.eclipse.wst.xml_sdk.feature.feature.group" version="3.2.1.v201007132152-7A528DXHQUiTiIHL4Oqz-Juc-1Ry"/>
+<unit id="org.eclipse.jst.enterprise_sdk.feature.feature.group" version="3.2.1.v201007070821-773184gAKKaTKZNBZEN_QOA3SMu0"/>
+<unit id="org.eclipse.wst.server_adapters.sdk.feature.feature.group" version="3.2.0.v201005241510-773-826HsDnNCEkGLEUk2FpBlG88"/>
+<unit id="org.eclipse.wst.web_sdk.feature.feature.group" version="3.2.1.v201007071800-7E7948SxY_E5H8Owq4NCEQsO089R"/>
+<repository location="http://download.eclipse.org/webtools/repository/helios/"/>
+</location>
+<location includeAllPlatforms="false" includeMode="planner" type="InstallableUnit">
+<unit id="org.maven.ide.eclipse.wtp.feature.feature.group" version="0.10.0.20100209-0800"/>
+<repository location="http://m2eclipse.sonatype.org/sites/m2e-extras/"/>
+</location>
+</locations>
+</target>

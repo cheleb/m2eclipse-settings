@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+   <feature url="features/net.orcades.ide.eclipse.settings.feature_1.2.6.jar" id="net.orcades.ide.eclipse.settings.feature" version="1.2.6"/>
+   <category-def name="orcades-config" label="Orcades config">
+      <description>
+         IDE configuration.
+      </description>
+   </category-def>
+</site>
