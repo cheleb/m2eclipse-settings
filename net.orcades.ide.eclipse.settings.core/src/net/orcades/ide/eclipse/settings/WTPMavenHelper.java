@@ -1,5 +1,6 @@
 package net.orcades.ide.eclipse.settings;
 
+import java.io.File;
 import java.util.Map;
 
 import org.apache.maven.model.Plugin;
@@ -12,6 +13,8 @@ import org.eclipse.wst.common.componentcore.resources.IVirtualResource;
 
 public class WTPMavenHelper {
 
+	private static final String ORG_CODEHAUS_MOJO_WEBSTART_WEBSTART_MAVEN_PLUGIN = "org.codehaus.mojo.webstart:webstart-maven-plugin";
+
 	/**
 	 * 
 	 * 
@@ -23,13 +26,15 @@ public class WTPMavenHelper {
 	 * &nbsp; &lt;/resource><br />
 	 * &lt;/webResources>
 	 * 
+	 * @param buildDir
+	 * 
 	 * 
 	 * @param buildPluginMap
 	 * @param monitor
 	 * @param rootFolder
 	 * @throws CoreException
 	 */
-	public static void deployExtraWebResources(
+	public static void deployExtraWebResources(String buildDir,
 			Map<String, Plugin> buildPluginMap, IProgressMonitor monitor,
 			IVirtualFolder rootFolder) throws CoreException {
 		if (buildPluginMap
@@ -37,6 +42,10 @@ public class WTPMavenHelper {
 			Plugin warPlugin = buildPluginMap
 					.get("org.apache.maven.plugins:maven-war-plugin");
 			Xpp3Dom configuration = (Xpp3Dom) warPlugin.getConfiguration();
+
+			if (configuration == null) {
+				return;
+			}
 
 			Xpp3Dom webResources[] = configuration.getChildren("webResources");
 
@@ -55,6 +64,8 @@ public class WTPMavenHelper {
 					continue;
 				}
 
+				path = getProjectRelativeRelativePath(path, buildDir);
+
 				rootFolder.createLink(new Path(path), IVirtualResource.FOLDER,
 						monitor);
 
@@ -62,18 +73,54 @@ public class WTPMavenHelper {
 		}
 	}
 
-	public static void deployTargetJNLP(Map<String, Plugin> buildPluginMap, IProgressMonitor monitor,
-			IVirtualFolder rootFolder) throws CoreException {
+	public static String getProjectRelativeRelativePath(String path,
+			String buildDir) {
+		path = path.replace('\\', '/');
+		buildDir = buildDir.replace('\\', '/');
+		int indexOfBuildDir = path.indexOf(buildDir);
+		if (indexOfBuildDir == 0) {
+			path = path.substring(buildDir.length());
+			int lastIndexOfDoubleDotSlash = path.lastIndexOf(".."+File.pathSeparator);
+			if (lastIndexOfDoubleDotSlash != -1) {
+				path = path.substring(lastIndexOfDoubleDotSlash
+						+ "../".length());
+			}
+		}
+
+		return path;
+	}
+
+	public static void deployTargetJNLP(Map<String, Plugin> buildPluginMap,
+			IProgressMonitor monitor, IVirtualFolder rootFolder)
+			throws CoreException {
 		if (buildPluginMap
-				.containsKey("org.codehaus.mojo.webstart:webstart-maven-plugin")) {
+				.containsKey(ORG_CODEHAUS_MOJO_WEBSTART_WEBSTART_MAVEN_PLUGIN)) {
 			IVirtualFolder webstart = rootFolder.getFolder("webstart");
 
-			if (webstart.exists()) {
-				rootFolder.removeLink(new Path("target/jnlp"),
-						IVirtualResource.FOLDER, monitor);
+			Plugin plugin = buildPluginMap
+					.get(ORG_CODEHAUS_MOJO_WEBSTART_WEBSTART_MAVEN_PLUGIN);
+
+			Xpp3Dom configuration = (Xpp3Dom) plugin.getConfiguration();
+
+			if (configuration == null) {
+				return;
 			}
-			webstart.createLink(new Path("target/jnlp"),
-					IVirtualResource.FOLDER, monitor);
+
+			Xpp3Dom workDirectory = configuration.getChild("workDirectory");
+
+			String jnlp = "target/jnlp";
+
+			if (workDirectory != null) {
+				jnlp = workDirectory.getValue();
+			}
+
+			Path jnlpPath = new Path(jnlp);
+
+			if (webstart.exists()) {
+				rootFolder.removeLink(jnlpPath, IVirtualResource.FOLDER,
+						monitor);
+			}
+			webstart.createLink(jnlpPath, IVirtualResource.FOLDER, monitor);
 		}
 	}
 }

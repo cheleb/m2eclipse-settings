@@ -20,6 +20,12 @@ import org.eclipse.wst.server.core.model.PublishTaskDelegate;
 import org.maven.ide.eclipse.MavenPlugin;
 import org.maven.ide.eclipse.project.IMavenProjectFacade;
 
+/**
+ * 
+ * @author onouguie
+ *
+ */
+@Deprecated
 public class PublishWTPCheckTask extends PublishTaskDelegate {
 
 	@Override
@@ -64,7 +70,7 @@ public class PublishWTPCheckTask extends PublishTaskDelegate {
 			IVirtualFolder rootFolder = iVirtualComponent.getRootFolder();
 
 			try {
-				WTPMavenHelper.deployExtraWebResources(buildPluginMap, null,
+				WTPMavenHelper.deployExtraWebResources(mavenProject.getBuild().getDirectory(), buildPluginMap, null,
 						rootFolder);
 				WTPMavenHelper.deployTargetJNLP(buildPluginMap, null,
 						rootFolder);

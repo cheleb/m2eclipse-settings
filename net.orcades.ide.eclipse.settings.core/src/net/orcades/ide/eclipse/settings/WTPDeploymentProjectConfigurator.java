@@ -1,8 +1,12 @@
 package net.orcades.ide.eclipse.settings;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import org.apache.maven.model.Plugin;
+import org.apache.maven.model.Resource;
+import org.apache.maven.project.MavenProject;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -39,9 +43,10 @@ public class WTPDeploymentProjectConfigurator extends ProjectConfigurator {
 		Map<String, Plugin> buildPluginMap = projectConfigurationRequest
 				.getMavenProject().getBuild().getPluginsAsMap();
 
-		WTPMavenHelper.deployTargetJNLP(buildPluginMap, monitor, rootFolder);
+		// WTPMavenHelper.deployTargetJNLP(buildPluginMap, monitor, rootFolder);
 
-		deployWebAppResources(project, buildPluginMap, monitor, rootFolder);
+		deployWebAppResources(projectConfigurationRequest.getMavenProject(),
+				project, buildPluginMap, monitor, rootFolder);
 
 		customizeWebapp(projectConfigurationRequest, component);
 
@@ -59,28 +64,46 @@ public class WTPDeploymentProjectConfigurator extends ProjectConfigurator {
 		component.setMetaProperty("context-root", finalName);
 	}
 
-	private void deployWebAppResources(IProject project,
-			Map<String, Plugin> buildPluginMap, IProgressMonitor monitor,
-			IVirtualFolder rootFolder) throws CoreException {
+	private void deployWebAppResources(MavenProject mavenProject,
+			IProject project, Map<String, Plugin> buildPluginMap,
+			IProgressMonitor monitor, IVirtualFolder rootFolder)
+			throws CoreException {
+
 		IVirtualFolder webinfClasses = rootFolder.getFolder("WEB-INF/classes");
 		if (!webinfClasses.exists()) {
 			System.err.println("no WEB-INF/classes");
-		} else {
-			// REMOVE the wtp src source folder
-			// rootFolder.removeLink(new Path("src"), IVirtualResource.NONE,
-			// monitor);
-			if (project.getFolder("src/main/java").exists()) {
-				webinfClasses.createLink(new Path("src/main/java"),
-						IVirtualResource.FOLDER, monitor);
-			}
+		}
+
+		// REMOVE the wtp src source folder
+		// rootFolder.removeLink(new Path("src"), IVirtualResource.NONE,
+		// monitor);
+		if (project.getFolder("src/main/java").exists()) {
+			webinfClasses.createLink(new Path("src/main/java"),
+					IVirtualResource.FOLDER, monitor);
+		}
+
+		List<Resource> resources = mavenProject.getResources();
+		
+		Properties properties = mavenProject.getProperties();
+		
+		String buildDir = properties.getProperty("buildDir", mavenProject.getBasedir().getAbsolutePath());
+		
+		
+		if (resources.isEmpty()) {
 			if (project.getFolder("src/main/resources").exists()) {
 				webinfClasses.createLink(new Path("src/main/resources"),
 						IVirtualResource.FOLDER, monitor);
 			}
+		} else {
+			for (Resource resource : resources) {
+				String path = resource.getDirectory();
+				path = WTPMavenHelper.getProjectRelativeRelativePath(path, buildDir);
+				webinfClasses.createLink(new Path(path),
+						IVirtualResource.FOLDER, monitor);
+			}
 		}
 
-		WTPMavenHelper.deployExtraWebResources(buildPluginMap, monitor,
-				rootFolder);
+		WTPMavenHelper.deployExtraWebResources(buildDir, buildPluginMap, monitor, rootFolder);
 	}
 
 	private void publishMavenDependency(IProgressMonitor monitor,
