@@ -10,7 +10,7 @@
 	<parent>
 		<groupId>net.orcades.ide.eclipse.settings</groupId>
 		<artifactId>net.orcades.ide.eclipse.settings</artifactId>
-		<version>1.2.6</version>
+		<version>1.3.0</version>
 	</parent>
 
 	<groupId>net.orcades.ide.eclipse.settings</groupId>

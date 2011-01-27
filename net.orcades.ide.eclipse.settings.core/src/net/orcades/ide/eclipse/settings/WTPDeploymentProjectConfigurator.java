@@ -7,8 +7,10 @@ import java.util.Properties;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.model.Resource;
 import org.apache.maven.project.MavenProject;
+import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jdt.core.IClasspathAttribute;
@@ -25,8 +27,10 @@ import org.maven.ide.eclipse.project.configurator.ProjectConfigurationRequest;
 
 public class WTPDeploymentProjectConfigurator extends ProjectConfigurator {
 
+	private static final String VERSION = "1.3.0";
+
 	public WTPDeploymentProjectConfigurator() {
-		// TODO Auto-generated constructor stub
+		
 	}
 
 	@Override
@@ -38,15 +42,41 @@ public class WTPDeploymentProjectConfigurator extends ProjectConfigurator {
 
 		IVirtualComponent component = ComponentCore.createComponent(project);
 
+		MavenProject mavenProject = projectConfigurationRequest
+				.getMavenProject();
+
+		
+
 		IVirtualFolder rootFolder = component.getRootFolder();
 
 		Map<String, Plugin> buildPluginMap = projectConfigurationRequest
 				.getMavenProject().getBuild().getPluginsAsMap();
 
-		// WTPMavenHelper.deployTargetJNLP(buildPluginMap, monitor, rootFolder);
+		Properties properties = mavenProject.getProperties();
 
-		deployWebAppResources(projectConfigurationRequest.getMavenProject(),
-				project, buildPluginMap, monitor, rootFolder);
+		String buildDir = properties.getProperty("buildDir", mavenProject
+				.getBasedir().getAbsolutePath());
+
+		WTPMavenHelper
+		.deployTargetJNLP(buildDir, buildPluginMap, monitor, rootFolder);
+//		if (agilentEclipseConfigurator.startsWith("1.2")) {
+//
+//
+//		} else {
+//			IVirtualFolder webstart = rootFolder.getFolder("webstart");
+//			
+//			IContainer[] res = webstart.getUnderlyingFolders();
+//			for (int i = 0; i < res.length; i++) {
+//				IContainer iContainer = res[i];
+//				IPath p = iContainer.getProjectRelativePath();
+//				System.out.println(p);
+//				webstart.removeLink(p, IVirtualFolder.FOLDER, monitor);
+//				
+//			}
+//		}
+
+		deployWebAppResources(buildDir, mavenProject, project, buildPluginMap, monitor,
+				rootFolder);
 
 		customizeWebapp(projectConfigurationRequest, component);
 
@@ -64,10 +94,10 @@ public class WTPDeploymentProjectConfigurator extends ProjectConfigurator {
 		component.setMetaProperty("context-root", finalName);
 	}
 
-	private void deployWebAppResources(MavenProject mavenProject,
-			IProject project, Map<String, Plugin> buildPluginMap,
-			IProgressMonitor monitor, IVirtualFolder rootFolder)
-			throws CoreException {
+	private void deployWebAppResources(String buildDir,
+			MavenProject mavenProject, IProject project,
+			Map<String, Plugin> buildPluginMap, IProgressMonitor monitor,
+			IVirtualFolder rootFolder) throws CoreException {
 
 		IVirtualFolder webinfClasses = rootFolder.getFolder("WEB-INF/classes");
 		if (!webinfClasses.exists()) {
@@ -83,12 +113,7 @@ public class WTPDeploymentProjectConfigurator extends ProjectConfigurator {
 		}
 
 		List<Resource> resources = mavenProject.getResources();
-		
-		Properties properties = mavenProject.getProperties();
-		
-		String buildDir = properties.getProperty("buildDir", mavenProject.getBasedir().getAbsolutePath());
-		
-		
+
 		if (resources.isEmpty()) {
 			if (project.getFolder("src/main/resources").exists()) {
 				webinfClasses.createLink(new Path("src/main/resources"),
@@ -97,13 +122,15 @@ public class WTPDeploymentProjectConfigurator extends ProjectConfigurator {
 		} else {
 			for (Resource resource : resources) {
 				String path = resource.getDirectory();
-				path = WTPMavenHelper.getProjectRelativeRelativePath(path, buildDir);
+				path = WTPMavenHelper.getProjectRelativeRelativePath(path,
+						buildDir);
 				webinfClasses.createLink(new Path(path),
 						IVirtualResource.FOLDER, monitor);
 			}
 		}
 
-		WTPMavenHelper.deployExtraWebResources(buildDir, buildPluginMap, monitor, rootFolder);
+		WTPMavenHelper.deployExtraWebResources(buildDir, buildPluginMap,
+				monitor, rootFolder);
 	}
 
 	private void publishMavenDependency(IProgressMonitor monitor,

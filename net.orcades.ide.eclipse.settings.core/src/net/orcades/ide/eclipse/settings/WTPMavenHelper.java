@@ -5,9 +5,11 @@ import java.util.Map;
 
 import org.apache.maven.model.Plugin;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
+import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.wst.common.componentcore.resources.IVirtualFolder;
 import org.eclipse.wst.common.componentcore.resources.IVirtualResource;
 
@@ -80,7 +82,8 @@ public class WTPMavenHelper {
 		int indexOfBuildDir = path.indexOf(buildDir);
 		if (indexOfBuildDir == 0) {
 			path = path.substring(buildDir.length());
-			int lastIndexOfDoubleDotSlash = path.lastIndexOf(".."+File.pathSeparator);
+			int lastIndexOfDoubleDotSlash = path.lastIndexOf(".."
+					+ File.pathSeparator);
 			if (lastIndexOfDoubleDotSlash != -1) {
 				path = path.substring(lastIndexOfDoubleDotSlash
 						+ "../".length());
@@ -90,9 +93,9 @@ public class WTPMavenHelper {
 		return path;
 	}
 
-	public static void deployTargetJNLP(Map<String, Plugin> buildPluginMap,
-			IProgressMonitor monitor, IVirtualFolder rootFolder)
-			throws CoreException {
+	public static void deployTargetJNLP(String buildDir,
+			Map<String, Plugin> buildPluginMap, IProgressMonitor monitor,
+			IVirtualFolder rootFolder) throws CoreException {
 		if (buildPluginMap
 				.containsKey(ORG_CODEHAUS_MOJO_WEBSTART_WEBSTART_MAVEN_PLUGIN)) {
 			IVirtualFolder webstart = rootFolder.getFolder("webstart");
@@ -108,17 +111,19 @@ public class WTPMavenHelper {
 
 			Xpp3Dom workDirectory = configuration.getChild("workDirectory");
 
-			String jnlp = "target/jnlp";
-
-			if (workDirectory != null) {
-				jnlp = workDirectory.getValue();
+			if (workDirectory == null) {
+				throw new CoreException(new Status(Status.ERROR, Activator.PLUGIN_ID, "Could not find JNLP directory!"));
 			}
-
+			String jnlp = getProjectRelativeRelativePath(
+					workDirectory.getValue(), buildDir);
 			Path jnlpPath = new Path(jnlp);
 
 			if (webstart.exists()) {
-				rootFolder.removeLink(jnlpPath, IVirtualResource.FOLDER,
-						monitor);
+				IContainer[] deployedFolders = webstart.getUnderlyingFolders();
+				for (int i = 0; i < deployedFolders.length; i++) {
+					IContainer deployedFolder = deployedFolders[i];
+					webstart.removeLink(deployedFolder.getProjectRelativePath(), IVirtualResource.FOLDER, monitor);
+				}
 			}
 			webstart.createLink(jnlpPath, IVirtualResource.FOLDER, monitor);
 		}

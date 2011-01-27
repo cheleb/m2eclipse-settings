@@ -3,6 +3,7 @@ package net.orcades.ide.eclipse.settings;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 import org.apache.maven.model.Build;
@@ -69,10 +70,14 @@ public class PublishWTPCheckTask extends PublishTaskDelegate {
 
 			IVirtualFolder rootFolder = iVirtualComponent.getRootFolder();
 
+			Properties properties = mavenProject.getProperties();
+			
+			String buildDir = properties.getProperty("buildDir", mavenProject.getBasedir().getAbsolutePath());
+			
 			try {
 				WTPMavenHelper.deployExtraWebResources(mavenProject.getBuild().getDirectory(), buildPluginMap, null,
 						rootFolder);
-				WTPMavenHelper.deployTargetJNLP(buildPluginMap, null,
+				WTPMavenHelper.deployTargetJNLP(buildDir, buildPluginMap, null,
 						rootFolder);
 			} catch (CoreException e1) {
 				e1.printStackTrace();
