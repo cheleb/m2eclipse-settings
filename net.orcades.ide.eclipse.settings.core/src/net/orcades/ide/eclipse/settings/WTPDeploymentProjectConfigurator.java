@@ -1,13 +1,12 @@
 package net.orcades.ide.eclipse.settings;
 
+import java.io.File;
 import java.util.List;
-import java.util.Map;
-import java.util.Properties;
 
 import org.apache.maven.model.Plugin;
 import org.apache.maven.model.Resource;
 import org.apache.maven.project.MavenProject;
-import org.eclipse.core.resources.IContainer;
+import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
@@ -27,10 +26,11 @@ import org.maven.ide.eclipse.project.configurator.ProjectConfigurationRequest;
 
 public class WTPDeploymentProjectConfigurator extends ProjectConfigurator {
 
-	private static final String VERSION = "1.3.0";
+	private static final IPath SRC_MAIN_WEBAPP = new Path("src"
+			+ File.separator + "main" + File.separator + "webapp");
 
 	public WTPDeploymentProjectConfigurator() {
-		
+
 	}
 
 	@Override
@@ -45,38 +45,28 @@ public class WTPDeploymentProjectConfigurator extends ProjectConfigurator {
 		MavenProject mavenProject = projectConfigurationRequest
 				.getMavenProject();
 
-		
-
 		IVirtualFolder rootFolder = component.getRootFolder();
 
-		Map<String, Plugin> buildPluginMap = projectConfigurationRequest
-				.getMavenProject().getBuild().getPluginsAsMap();
+		Plugin warPlugin = mavenProject
+				.getPlugin("org.apache.maven.plugins:maven-war-plugin");
 
-		Properties properties = mavenProject.getProperties();
+		IPath src = null;
+		if (warPlugin != null) {
+			Xpp3Dom configurationXpp3Dom = (Xpp3Dom) warPlugin
+					.getConfiguration();
+			Xpp3Dom warSourceDirectoryXpp3Dom = configurationXpp3Dom
+					.getChild("warSourceDirectory");
+			src = new Path(warSourceDirectoryXpp3Dom.getValue());
 
-		String buildDir = properties.getProperty("buildDir", mavenProject
-				.getBasedir().getAbsolutePath());
+		}
+		if (src == null) {
+			src = SRC_MAIN_WEBAPP;
+		}
 
-		WTPMavenHelper
-		.deployTargetJNLP(buildDir, buildPluginMap, monitor, rootFolder);
-//		if (agilentEclipseConfigurator.startsWith("1.2")) {
-//
-//
-//		} else {
-//			IVirtualFolder webstart = rootFolder.getFolder("webstart");
-//			
-//			IContainer[] res = webstart.getUnderlyingFolders();
-//			for (int i = 0; i < res.length; i++) {
-//				IContainer iContainer = res[i];
-//				IPath p = iContainer.getProjectRelativePath();
-//				System.out.println(p);
-//				webstart.removeLink(p, IVirtualFolder.FOLDER, monitor);
-//				
-//			}
-//		}
+		deployWebAppResources(mavenProject, project, monitor, rootFolder, src);
 
-		deployWebAppResources(buildDir, mavenProject, project, buildPluginMap, monitor,
-				rootFolder);
+		WTPMavenHelper.deployTargetJNLP(mavenProject, monitor, rootFolder,
+				console, src);
 
 		customizeWebapp(projectConfigurationRequest, component);
 
@@ -94,19 +84,17 @@ public class WTPDeploymentProjectConfigurator extends ProjectConfigurator {
 		component.setMetaProperty("context-root", finalName);
 	}
 
-	private void deployWebAppResources(String buildDir,
-			MavenProject mavenProject, IProject project,
-			Map<String, Plugin> buildPluginMap, IProgressMonitor monitor,
-			IVirtualFolder rootFolder) throws CoreException {
+	private void deployWebAppResources(MavenProject mavenProject,
+			IProject project, IProgressMonitor monitor,
+			IVirtualFolder rootFolder, IPath src) throws CoreException {
+
+		String basedir = mavenProject.getBasedir().getAbsolutePath();
 
 		IVirtualFolder webinfClasses = rootFolder.getFolder("WEB-INF/classes");
 		if (!webinfClasses.exists()) {
 			System.err.println("no WEB-INF/classes");
 		}
 
-		// REMOVE the wtp src source folder
-		// rootFolder.removeLink(new Path("src"), IVirtualResource.NONE,
-		// monitor);
 		if (project.getFolder("src/main/java").exists()) {
 			webinfClasses.createLink(new Path("src/main/java"),
 					IVirtualResource.FOLDER, monitor);
@@ -123,14 +111,14 @@ public class WTPDeploymentProjectConfigurator extends ProjectConfigurator {
 			for (Resource resource : resources) {
 				String path = resource.getDirectory();
 				path = WTPMavenHelper.getProjectRelativeRelativePath(path,
-						buildDir);
+						basedir);
 				webinfClasses.createLink(new Path(path),
 						IVirtualResource.FOLDER, monitor);
 			}
 		}
 
-		WTPMavenHelper.deployExtraWebResources(buildDir, buildPluginMap,
-				monitor, rootFolder);
+		WTPMavenHelper.deployExtraWebResources(mavenProject, monitor,
+				rootFolder, src);
 	}
 
 	private void publishMavenDependency(IProgressMonitor monitor,

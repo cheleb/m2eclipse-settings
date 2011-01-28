@@ -26,12 +26,5 @@
       </configurator>
    </extension>
    
-   <!--
-    <extension point="org.eclipse.wst.server.core.publishTasks">
-     <publishTask
-        id="net.orcades.ide.eclipse.settings.publishwtpchecktask" class="net.orcades.ide.eclipse.settings.PublishWTPCheckTask"
-        typeIds="org.eclipse.jst.server.tomcat.*" />
-    </extension>
-   -->
    
 </plugin>

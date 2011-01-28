@@ -1,17 +1,20 @@
 package net.orcades.ide.eclipse.settings;
 
 import java.io.File;
-import java.util.Map;
 
 import org.apache.maven.model.Plugin;
+import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.wst.common.componentcore.resources.IVirtualFolder;
 import org.eclipse.wst.common.componentcore.resources.IVirtualResource;
+import org.maven.ide.eclipse.MavenPlugin;
+import org.maven.ide.eclipse.core.MavenConsole;
 
 public class WTPMavenHelper {
 
@@ -36,13 +39,14 @@ public class WTPMavenHelper {
 	 * @param rootFolder
 	 * @throws CoreException
 	 */
-	public static void deployExtraWebResources(String buildDir,
-			Map<String, Plugin> buildPluginMap, IProgressMonitor monitor,
-			IVirtualFolder rootFolder) throws CoreException {
-		if (buildPluginMap
-				.containsKey("org.apache.maven.plugins:maven-war-plugin")) {
-			Plugin warPlugin = buildPluginMap
-					.get("org.apache.maven.plugins:maven-war-plugin");
+	public static void deployExtraWebResources(MavenProject mavenProject,
+			IProgressMonitor monitor, IVirtualFolder rootFolder, IPath src)
+			throws CoreException {
+
+		Plugin warPlugin = mavenProject
+				.getPlugin("org.apache.maven.plugins:maven-war-plugin");
+
+		if (warPlugin != null) {
 			Xpp3Dom configuration = (Xpp3Dom) warPlugin.getConfiguration();
 
 			if (configuration == null) {
@@ -66,11 +70,8 @@ public class WTPMavenHelper {
 					continue;
 				}
 
-				path = getProjectRelativeRelativePath(path, buildDir);
-
-				rootFolder.createLink(new Path(path), IVirtualResource.FOLDER,
-						monitor);
-
+				publishResources(rootFolder, new Path(path), src, monitor);
+			
 			}
 		}
 	}
@@ -82,26 +83,23 @@ public class WTPMavenHelper {
 		int indexOfBuildDir = path.indexOf(buildDir);
 		if (indexOfBuildDir == 0) {
 			path = path.substring(buildDir.length());
-			int lastIndexOfDoubleDotSlash = path.lastIndexOf(".."
-					+ File.pathSeparator);
-			if (lastIndexOfDoubleDotSlash != -1) {
-				path = path.substring(lastIndexOfDoubleDotSlash
-						+ "../".length());
-			}
 		}
-
+		if (path.startsWith("/")) {
+			return path.substring(1);
+		}
 		return path;
 	}
 
-	public static void deployTargetJNLP(String buildDir,
-			Map<String, Plugin> buildPluginMap, IProgressMonitor monitor,
-			IVirtualFolder rootFolder) throws CoreException {
-		if (buildPluginMap
-				.containsKey(ORG_CODEHAUS_MOJO_WEBSTART_WEBSTART_MAVEN_PLUGIN)) {
-			IVirtualFolder webstart = rootFolder.getFolder("webstart");
+	public static void deployTargetJNLP(MavenProject mavenProject,
+			IProgressMonitor monitor, IVirtualFolder rootFolder,
+			MavenConsole console, IPath src) throws CoreException {
 
-			Plugin plugin = buildPluginMap
-					.get(ORG_CODEHAUS_MOJO_WEBSTART_WEBSTART_MAVEN_PLUGIN);
+		String buildDir = mavenProject.getBasedir().getAbsolutePath();
+
+		Plugin plugin = mavenProject
+				.getPlugin(ORG_CODEHAUS_MOJO_WEBSTART_WEBSTART_MAVEN_PLUGIN);
+		if (plugin != null) {
+			IVirtualFolder webstart = rootFolder.getFolder("webstart");
 
 			Xpp3Dom configuration = (Xpp3Dom) plugin.getConfiguration();
 
@@ -112,20 +110,58 @@ public class WTPMavenHelper {
 			Xpp3Dom workDirectory = configuration.getChild("workDirectory");
 
 			if (workDirectory == null) {
-				throw new CoreException(new Status(Status.ERROR, Activator.PLUGIN_ID, "Could not find JNLP directory!"));
+				throw new CoreException(new Status(Status.ERROR,
+						Activator.PLUGIN_ID, "Could not find JNLP directory!"));
 			}
 			String jnlp = getProjectRelativeRelativePath(
 					workDirectory.getValue(), buildDir);
 			Path jnlpPath = new Path(jnlp);
+			jnlpPath = new Path(jnlpPath.toOSString());
 
-			if (webstart.exists()) {
-				IContainer[] deployedFolders = webstart.getUnderlyingFolders();
-				for (int i = 0; i < deployedFolders.length; i++) {
-					IContainer deployedFolder = deployedFolders[i];
-					webstart.removeLink(deployedFolder.getProjectRelativePath(), IVirtualResource.FOLDER, monitor);
+			publishResources(webstart, jnlpPath, src, monitor);
+
+		}
+	}
+
+	private static void publishResources(IVirtualFolder vfolder, Path newPath,
+			IPath src, IProgressMonitor monitor) throws CoreException {
+		MavenConsole console = MavenPlugin.getDefault().getConsole();
+		console.logMessage("o Adding " + newPath + " as " + vfolder.getName());
+		boolean shouldIAddEntry = true;
+		if (vfolder.exists()) {
+			console.logMessage(" \t- Virtual folder exist: " + vfolder.getName());
+			IContainer[] deployedFolders = vfolder.getUnderlyingFolders();
+			for (int i = 0; i < deployedFolders.length; i++) {
+				IContainer deployedFolder = deployedFolders[i];
+
+				IPath deployedFolderPath = deployedFolder
+						.getProjectRelativePath();
+				if (src.equals(deployedFolderPath)) {
+					// Ignore
+					continue;
+				}
+				console.logMessage(" \t\t- " + deployedFolderPath);
+
+				if (deployedFolderPath.equals(newPath)) {
+					console.logMessage(" \t\t\t- Targeted path " + newPath
+							+ " alreaddy added");
+					shouldIAddEntry = false;
+				} else {
+					if (src.isPrefixOf(deployedFolderPath)) {
+						console.logMessage(" \t\t\t- Overlap in " + vfolder.getName() + " with " + src);
+					} else {
+						console.logMessage(" \t\t\t- Found an old entry for targeted path: "
+								+ deployedFolderPath);
+						vfolder.removeLink(deployedFolderPath,
+								IVirtualResource.FOLDER, monitor);
+					}
 				}
 			}
-			webstart.createLink(jnlpPath, IVirtualResource.FOLDER, monitor);
 		}
+		if (shouldIAddEntry) {
+			console.logMessage("Create new entry for path: " + newPath);
+			vfolder.createLink(newPath, IVirtualResource.FOLDER, monitor);
+		}
+
 	}
 }
