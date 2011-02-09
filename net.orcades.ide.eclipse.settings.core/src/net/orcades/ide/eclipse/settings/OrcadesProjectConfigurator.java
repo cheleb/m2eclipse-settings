@@ -27,7 +27,10 @@ import net.orcades.ide.eclipse.settings.model.SettingFile;
 
 import org.apache.maven.model.Build;
 import org.apache.maven.model.Plugin;
+import org.apache.maven.model.Resource;
+import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
+import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
@@ -39,6 +42,10 @@ import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.wst.common.componentcore.ComponentCore;
+import org.eclipse.wst.common.componentcore.resources.IVirtualComponent;
+import org.eclipse.wst.common.componentcore.resources.IVirtualFolder;
+import org.eclipse.wst.common.componentcore.resources.IVirtualResource;
 import org.maven.ide.eclipse.MavenPlugin;
 import org.maven.ide.eclipse.embedder.MavenRuntime;
 import org.maven.ide.eclipse.embedder.MavenRuntimeManager;
@@ -80,6 +87,55 @@ public class OrcadesProjectConfigurator extends ProjectConfigurator {
 		// console.logMessage("mvn " + goal);
 		// }
 		// cli.doMain(appliedGoals, location, null, null);
+
+		MavenProject mavenProject = projectConfigurationRequest
+				.getMavenProject();
+		if ("jar".equals(mavenProject.getPackaging())) {
+
+			IVirtualComponent component = ComponentCore
+					.createComponent(project);
+			IVirtualFolder rootFolder = component.getRootFolder();
+			addClassesAndResourcesToWTPDeployment(project, mavenProject, rootFolder, monitor);
+//			IContainer srcFolder = rootFolder.getUnderlyingFolder();
+//			if (srcFolder.exists()) {
+//				if ("src".equals(srcFolder.getName())) {
+//					console.logError("Removed " + srcFolder.getName()
+//							+ " from wtp deployment!");
+//					rootFolder.removeLink(new Path("src"),
+//							IVirtualResource.FOLDER, monitor);
+//				}
+//
+//			}
+//
+//			if (project.getFolder("src/main/java").exists()) {
+//				rootFolder.createLink(new Path("src/main/java"),
+//						IVirtualResource.FOLDER, monitor);
+//			}
+//
+//			List<Resource> resources = mavenProject.getResources();
+//
+//			if (resources.isEmpty()) {
+//				if (project.getFolder("src/main/resources").exists()) {
+//					rootFolder.createLink(new Path("src/main/resources"),
+//							IVirtualResource.FOLDER, monitor);
+//					console.logMessage("Linked src/main/resources to "
+//							+ rootFolder.getName() + "  from wtp deployment!");
+//				}
+//			} else {
+//				String basedir = project.getLocation().toString();
+//				for (Resource resource : resources) {
+//					String pathAsString = resource.getDirectory();
+//
+//					pathAsString = WTPMavenHelper
+//							.getProjectRelativeRelativePath(pathAsString,
+//									basedir);
+//					rootFolder.createLink(new Path(pathAsString),
+//							IVirtualResource.FOLDER, monitor);
+//					console.logMessage("Linked " + pathAsString + "  to "
+//							+ rootFolder.getName() + "  from wtp deployment!");
+//				}
+//			}
+		}
 	}
 
 	public static MavenRuntime getMavenRuntime(String location)
@@ -204,8 +260,7 @@ public class OrcadesProjectConfigurator extends ProjectConfigurator {
 					"/target/generated-source/facade/");
 		}
 
-		if (buildPluginMap
-				.containsKey("de.jflex:maven-jflex-plugin")) {
+		if (buildPluginMap.containsKey("de.jflex:maven-jflex-plugin")) {
 			insureClassPathEntry(monitor, project,
 					"/target/generated-sources/jflex/");
 		}
@@ -219,7 +274,8 @@ public class OrcadesProjectConfigurator extends ProjectConfigurator {
 		IPath path = project.getFolder(srcPath).getFullPath();
 
 		//
-		// FIXME This is never working ... the custom src folder are never in this list ...
+		// FIXME This is never working ... the custom src folder are never in
+		// this list ...
 		//
 		for (int i = 0; i < prevClasspathEntries.length; i++) {
 			IClasspathEntry iClasspathEntry = prevClasspathEntries[i];
@@ -240,6 +296,7 @@ public class OrcadesProjectConfigurator extends ProjectConfigurator {
 
 	/**
 	 * Delete a folder, in this project.
+	 * 
 	 * @param project
 	 * @param path
 	 * @param monitor

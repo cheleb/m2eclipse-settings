@@ -7,6 +7,7 @@ import org.apache.maven.model.Plugin;
 import org.apache.maven.model.Resource;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
+import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
@@ -63,6 +64,11 @@ public class WTPDeploymentProjectConfigurator extends ProjectConfigurator {
 			src = SRC_MAIN_WEBAPP;
 		}
 
+		IContainer srcFolder = rootFolder.getUnderlyingFolder();
+		if (srcFolder.exists()) {
+			System.out.println(srcFolder);
+		}
+
 		deployWebAppResources(mavenProject, project, monitor, rootFolder, src);
 
 		WTPMavenHelper.deployTargetJNLP(mavenProject, monitor, rootFolder,
@@ -91,31 +97,34 @@ public class WTPDeploymentProjectConfigurator extends ProjectConfigurator {
 		String basedir = mavenProject.getBasedir().getAbsolutePath();
 
 		IVirtualFolder webinfClasses = rootFolder.getFolder("WEB-INF/classes");
-		if (!webinfClasses.exists()) {
-			System.err.println("no WEB-INF/classes");
-		}
-
-		if (project.getFolder("src/main/java").exists()) {
-			webinfClasses.createLink(new Path("src/main/java"),
-					IVirtualResource.FOLDER, monitor);
-		}
-
-		List<Resource> resources = mavenProject.getResources();
-
-		if (resources.isEmpty()) {
-			if (project.getFolder("src/main/resources").exists()) {
-				webinfClasses.createLink(new Path("src/main/resources"),
-						IVirtualResource.FOLDER, monitor);
-			}
-		} else {
-			for (Resource resource : resources) {
-				String path = resource.getDirectory();
-				path = WTPMavenHelper.getProjectRelativeRelativePath(path,
-						basedir);
-				webinfClasses.createLink(new Path(path),
-						IVirtualResource.FOLDER, monitor);
-			}
-		}
+		
+		addClassesAndResourcesToWTPDeployment(project, mavenProject, webinfClasses, monitor);
+		
+//		if (!webinfClasses.exists()) {
+//			System.err.println("no WEB-INF/classes");
+//		}
+//
+//		if (project.getFolder("src/main/java").exists()) {
+//			webinfClasses.createLink(new Path("src/main/java"),
+//					IVirtualResource.FOLDER, monitor);
+//		}
+//
+//		List<Resource> resources = mavenProject.getResources();
+//
+//		if (resources.isEmpty()) {
+//			if (project.getFolder("src/main/resources").exists()) {
+//				webinfClasses.createLink(new Path("src/main/resources"),
+//						IVirtualResource.FOLDER, monitor);
+//			}
+//		} else {
+//			for (Resource resource : resources) {
+//				String path = resource.getDirectory();
+//				path = WTPMavenHelper.getProjectRelativeRelativePath(path,
+//						basedir);
+//				webinfClasses.createLink(new Path(path),
+//						IVirtualResource.FOLDER, monitor);
+//			}
+//		}
 
 		WTPMavenHelper.deployExtraWebResources(mavenProject, monitor,
 				rootFolder, src);

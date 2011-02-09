@@ -15,28 +15,36 @@ import java.util.Properties;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.model.Dependency;
+import org.apache.maven.model.Resource;
+import org.apache.maven.project.MavenProject;
 import org.eclipse.core.resources.ICommand;
+import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IProjectDescription;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
+import org.eclipse.wst.common.componentcore.ComponentCore;
+import org.eclipse.wst.common.componentcore.resources.IVirtualComponent;
+import org.eclipse.wst.common.componentcore.resources.IVirtualFolder;
+import org.eclipse.wst.common.componentcore.resources.IVirtualResource;
 import org.maven.ide.eclipse.project.configurator.AbstractProjectConfigurator;
 import org.osgi.service.prefs.BackingStoreException;
 import org.osgi.service.prefs.Preferences;
 
-public abstract class ProjectConfigurator extends AbstractProjectConfigurator  {
+public abstract class ProjectConfigurator extends AbstractProjectConfigurator {
 
 	public ProjectConfigurator() {
 
 	}
 
-	 /*
+	/*
 	 * Create a classloader based on the PMD plugin dependencies, if any
 	 */
 
-	protected URLClassLoader configureClassLoader(List<Dependency> dependencies,
-			IProgressMonitor monitor) {
+	protected URLClassLoader configureClassLoader(
+			List<Dependency> dependencies, IProgressMonitor monitor) {
 		// Let's default to the current context classloader
 		URLClassLoader classLoader = null;
 
@@ -51,8 +59,8 @@ public abstract class ProjectConfigurator extends AbstractProjectConfigurator  {
 					artifact = maven.resolve(dependency.getGroupId(),
 							dependency.getArtifactId(),
 							dependency.getVersion(), dependency.getType(),
-							dependency.getClassifier(), maven
-									.getArtifactRepositories(), monitor);
+							dependency.getClassifier(),
+							maven.getArtifactRepositories(), monitor);
 				} catch (CoreException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
@@ -76,40 +84,84 @@ public abstract class ProjectConfigurator extends AbstractProjectConfigurator  {
 		return classLoader;
 	}
 
-	
 	protected Preferences getPrefences(IProject project, String pref) {
-		return Platform
-		.getPreferencesService()
-		.getRootNode()
-		.node("project/"+project.getName()+"/" + pref);
+		return Platform.getPreferencesService().getRootNode()
+				.node("project/" + project.getName() + "/" + pref);
 	}
-	
-	protected void setOtherPreferences(
-			IProject project,
-			InputStream inputStream, String pref) throws IOException, BackingStoreException {
-		
-		
-		if(inputStream==null) {
+
+	protected void setOtherPreferences(IProject project,
+			InputStream inputStream, String pref) throws IOException,
+			BackingStoreException {
+
+		if (inputStream == null) {
 			console.logMessage("No settings for: " + pref);
 			return;
 		}
 		Preferences preferences = getPrefences(project, pref);
-		
+
 		Reader inStreamReader = new InputStreamReader(inputStream,
 				Charset.forName("utf8"));
 		Properties properties = new Properties();
 		properties.load(inStreamReader);
-		for(Enumeration<Object> e = properties.keys(); e.hasMoreElements(); /* NO-OP */) {
+		for (Enumeration<Object> e = properties.keys(); e.hasMoreElements(); /*
+																			 * NO-
+																			 * OP
+																			 */) {
 			String key = (String) e.nextElement();
 			preferences.put(key, properties.getProperty(key));
 		}
-		
+
 		preferences.flush();
-		
-		console.logMessage("Update preferences: "+pref);
+
+		console.logMessage("Update preferences: " + pref);
 	}
-	
-	
+
+	protected void addClassesAndResourcesToWTPDeployment(IProject project,
+			MavenProject mavenProject, IVirtualFolder rootFolder,
+			IProgressMonitor monitor) throws CoreException {
+		
+
+		IContainer srcFolder = rootFolder.getUnderlyingFolder();
+		if (srcFolder.exists()) {
+			if ("src".equals(srcFolder.getName())) {
+				console.logError("Removed " + srcFolder.getName()
+						+ " from wtp deployment!");
+				rootFolder.removeLink(new Path("src"), IVirtualResource.FOLDER,
+						monitor);
+			}
+
+		}
+
+		if (project.getFolder("src/main/java").exists()) {
+			rootFolder.createLink(new Path("src/main/java"),
+					IVirtualResource.FOLDER, monitor);
+		}
+
+		List<Resource> resources = mavenProject.getResources();
+
+		if (resources.isEmpty()) {
+			if (project.getFolder("src/main/resources").exists()) {
+				rootFolder.createLink(new Path("src/main/resources"),
+						IVirtualResource.FOLDER, monitor);
+				console.logMessage("Linked src/main/resources to "
+						+ rootFolder.getName() + "  from wtp deployment!");
+			}
+		} else {
+			String basedir = project.getLocation().toString();
+			for (Resource resource : resources) {
+				String pathAsString = resource.getDirectory();
+
+				pathAsString = WTPMavenHelper.getProjectRelativeRelativePath(
+						pathAsString, basedir);
+				rootFolder.createLink(new Path(pathAsString),
+						IVirtualResource.FOLDER, monitor);
+				console.logMessage("Linked " + pathAsString + "  to "
+						+ rootFolder.getName() + "  from wtp deployment!");
+			}
+		}
+
+	}
+
 	public static void addNature(IProject project, String natureId,
 			IProgressMonitor monitor) throws CoreException {
 		if (!project.hasNature(natureId)) {
@@ -142,5 +194,5 @@ public abstract class ProjectConfigurator extends AbstractProjectConfigurator  {
 		project.setDescription(description, monitor);
 
 	}
-	
+
 }
