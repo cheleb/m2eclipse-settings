@@ -96,45 +96,7 @@ public class OrcadesProjectConfigurator extends ProjectConfigurator {
 					.createComponent(project);
 			IVirtualFolder rootFolder = component.getRootFolder();
 			addClassesAndResourcesToWTPDeployment(project, mavenProject, rootFolder, monitor);
-//			IContainer srcFolder = rootFolder.getUnderlyingFolder();
-//			if (srcFolder.exists()) {
-//				if ("src".equals(srcFolder.getName())) {
-//					console.logError("Removed " + srcFolder.getName()
-//							+ " from wtp deployment!");
-//					rootFolder.removeLink(new Path("src"),
-//							IVirtualResource.FOLDER, monitor);
-//				}
-//
-//			}
-//
-//			if (project.getFolder("src/main/java").exists()) {
-//				rootFolder.createLink(new Path("src/main/java"),
-//						IVirtualResource.FOLDER, monitor);
-//			}
-//
-//			List<Resource> resources = mavenProject.getResources();
-//
-//			if (resources.isEmpty()) {
-//				if (project.getFolder("src/main/resources").exists()) {
-//					rootFolder.createLink(new Path("src/main/resources"),
-//							IVirtualResource.FOLDER, monitor);
-//					console.logMessage("Linked src/main/resources to "
-//							+ rootFolder.getName() + "  from wtp deployment!");
-//				}
-//			} else {
-//				String basedir = project.getLocation().toString();
-//				for (Resource resource : resources) {
-//					String pathAsString = resource.getDirectory();
-//
-//					pathAsString = WTPMavenHelper
-//							.getProjectRelativeRelativePath(pathAsString,
-//									basedir);
-//					rootFolder.createLink(new Path(pathAsString),
-//							IVirtualResource.FOLDER, monitor);
-//					console.logMessage("Linked " + pathAsString + "  to "
-//							+ rootFolder.getName() + "  from wtp deployment!");
-//				}
-//			}
+
 		}
 	}
 

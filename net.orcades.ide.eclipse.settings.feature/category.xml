@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-   <feature url="features/net.orcades.ide.eclipse.settings.feature_1.3.0.jar" id="net.orcades.ide.eclipse.settings.feature" version="1.3.0"/>
+   <feature url="features/net.orcades.ide.eclipse.settings.feature_1.3.1.jar" id="net.orcades.ide.eclipse.settings.feature" version="1.3.1"/>
    <category-def name="orcades-config" label="Orcades config">
       <description>
          IDE configuration.

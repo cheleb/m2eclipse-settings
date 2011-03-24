@@ -2,7 +2,7 @@
 <feature
       id="net.orcades.ide.eclipse.settings.feature"
       label="Eclipse Settings"
-      version="1.3.0">
+      version="1.3.1">
 
    <description url="http://www.example.com/description">
       [Enter Feature Description here.]
@@ -39,7 +39,7 @@
          id="net.orcades.ide.eclipse.settings.core"
          download-size="0"
          install-size="0"
-         version="1.3.0"
+         version="1.3.1"
          unpack="false"/>
 
 </feature>
