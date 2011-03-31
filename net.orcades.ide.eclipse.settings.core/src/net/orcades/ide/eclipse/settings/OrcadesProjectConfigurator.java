@@ -94,9 +94,13 @@ public class OrcadesProjectConfigurator extends ProjectConfigurator {
 
 			IVirtualComponent component = ComponentCore
 					.createComponent(project);
-			IVirtualFolder rootFolder = component.getRootFolder();
-			addClassesAndResourcesToWTPDeployment(project, mavenProject, rootFolder, monitor);
-
+			if (component == null) {
+				console.logMessage("Not a WTP Component!");
+			} else {
+				IVirtualFolder rootFolder = component.getRootFolder();
+				addClassesAndResourcesToWTPDeployment(project, mavenProject,
+						rootFolder, monitor);
+			}
 		}
 	}
 
