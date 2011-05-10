@@ -84,10 +84,10 @@ public class WTPDeploymentProjectConfigurator extends ProjectConfigurator {
 			ProjectConfigurationRequest projectConfigurationRequest,
 			IVirtualComponent component) {
 		component.setMetaProperty("java-output-path", "/target/classes");
-
-		String finalName = projectConfigurationRequest.getMavenProject()
-				.getBuild().getFinalName();
-		component.setMetaProperty("context-root", finalName);
+//  WTP integration now handles this ... since version 0.12.0
+//		String finalName = projectConfigurationRequest.getMavenProject()
+//				.getBuild().getFinalName();
+//		component.setMetaProperty("context-root", finalName);
 	}
 
 	private void deployWebAppResources(MavenProject mavenProject,
