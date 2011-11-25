@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+   <description url="http://github.com/cheleb/m2e-settings/">
+      Maven Integration for Eclipse Extras
+   </description>
+   <feature url="features/net.orcades.ide.eclipse.settings.feature_0.0.0.jar" id="net.orcades.ide.eclipse.settings.feature" version="0.0.0">
+      <category name="m2e-settings"/>
+   </feature>
+   <category-def name="m2e-settings" label="Maven Integration for Eclipse Settings"/>
+</site>

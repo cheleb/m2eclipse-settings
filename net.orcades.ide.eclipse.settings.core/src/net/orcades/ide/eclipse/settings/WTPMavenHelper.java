@@ -1,7 +1,5 @@
 package net.orcades.ide.eclipse.settings;
 
-import java.io.File;
-
 import org.apache.maven.model.Plugin;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
@@ -13,11 +11,13 @@ import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.wst.common.componentcore.resources.IVirtualFolder;
 import org.eclipse.wst.common.componentcore.resources.IVirtualResource;
-import org.maven.ide.eclipse.MavenPlugin;
-import org.maven.ide.eclipse.core.MavenConsole;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class WTPMavenHelper {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(WTPMavenHelper.class);
+	
 	private static final String ORG_CODEHAUS_MOJO_WEBSTART_WEBSTART_MAVEN_PLUGIN = "org.codehaus.mojo.webstart:webstart-maven-plugin";
 
 	/**
@@ -92,7 +92,7 @@ public class WTPMavenHelper {
 
 	public static void deployTargetJNLP(MavenProject mavenProject,
 			IProgressMonitor monitor, IVirtualFolder rootFolder,
-			MavenConsole console, IPath src) throws CoreException {
+			 IPath src) throws CoreException {
 
 		String buildDir = mavenProject.getBasedir().getAbsolutePath();
 
@@ -125,11 +125,11 @@ public class WTPMavenHelper {
 
 	private static void publishResources(IVirtualFolder vfolder, Path newPath,
 			IPath src, IProgressMonitor monitor) throws CoreException {
-		MavenConsole console = MavenPlugin.getDefault().getConsole();
-		console.logMessage("o Adding " + newPath + " as " + vfolder.getName());
+		
+		LOGGER.info("o Adding " + newPath + " as " + vfolder.getName());
 		boolean shouldIAddEntry = true;
 		if (vfolder.exists()) {
-			console.logMessage(" \t- Virtual folder exist: " + vfolder.getName());
+			LOGGER.info(" \t- Virtual folder exist: " + vfolder.getName());
 			IContainer[] deployedFolders = vfolder.getUnderlyingFolders();
 			for (int i = 0; i < deployedFolders.length; i++) {
 				IContainer deployedFolder = deployedFolders[i];
@@ -140,17 +140,17 @@ public class WTPMavenHelper {
 					// Ignore
 					continue;
 				}
-				console.logMessage(" \t\t- " + deployedFolderPath);
+				LOGGER.info(" \t\t- " + deployedFolderPath);
 
 				if (deployedFolderPath.equals(newPath)) {
-					console.logMessage(" \t\t\t- Targeted path " + newPath
+					LOGGER.info(" \t\t\t- Targeted path " + newPath
 							+ " alreaddy added");
 					shouldIAddEntry = false;
 				} else {
 					if (src.isPrefixOf(deployedFolderPath)) {
-						console.logMessage(" \t\t\t- Overlap in " + vfolder.getName() + " with " + src);
+						LOGGER.info(" \t\t\t- Overlap in " + vfolder.getName() + " with " + src);
 					} else {
-						console.logMessage(" \t\t\t- Found an old entry for targeted path: "
+						LOGGER.info(" \t\t\t- Found an old entry for targeted path: "
 								+ deployedFolderPath);
 						vfolder.removeLink(deployedFolderPath,
 								IVirtualResource.FOLDER, monitor);
@@ -159,7 +159,7 @@ public class WTPMavenHelper {
 			}
 		}
 		if (shouldIAddEntry) {
-			console.logMessage("Create new entry for path: " + newPath);
+			LOGGER.info("Create new entry for path: " + newPath);
 			vfolder.createLink(newPath, IVirtualResource.FOLDER, monitor);
 		}
 

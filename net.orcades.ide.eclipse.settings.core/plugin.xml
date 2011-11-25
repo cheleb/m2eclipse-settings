@@ -2,28 +2,24 @@
 <?eclipse version="3.4"?>
 <plugin>
    <extension
-         point="org.maven.ide.eclipse.projectConfigurators">
+         point="org.eclipse.m2e.core.lifecycleMappingMetadataSource">
+   </extension>
+   <extension
+         point="org.eclipse.m2e.core.projectConfigurators">
       <configurator
             class="net.orcades.ide.eclipse.settings.OrcadesProjectConfigurator"
-            generic="false"
             id="net.orcades.m2eclipse.configurator.eclipse.config"
             name="ORCADES CONFIG"
-            priority="101">
+            >
       </configurator>
       <configurator
             class="net.orcades.ide.eclipse.settings.WTPDeploymentProjectConfigurator"
-            generic="false"
             id="net.orcades.m2eclipse.configurator.wtp"
             name="ORCADES WTP"
-            priority="101">
+            secondaryTo="org.maven.ide.eclipse.configuration.wtp.configurator"
+           >
       </configurator>
-      <configurator
-            class="net.orcades.ide.eclipse.gwt.core.GWTConfigurator"
-            generic="false"
-            id="net.orcades.ide.eclipse.settings.core.configurator1"
-            name="GWT"
-            priority="101">
-      </configurator>
+     
    </extension>
    
    

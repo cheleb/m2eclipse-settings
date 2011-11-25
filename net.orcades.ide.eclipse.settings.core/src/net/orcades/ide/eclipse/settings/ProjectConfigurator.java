@@ -25,16 +25,18 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
-import org.eclipse.wst.common.componentcore.ComponentCore;
-import org.eclipse.wst.common.componentcore.resources.IVirtualComponent;
+import org.eclipse.m2e.core.project.configurator.AbstractProjectConfigurator;
 import org.eclipse.wst.common.componentcore.resources.IVirtualFolder;
 import org.eclipse.wst.common.componentcore.resources.IVirtualResource;
-import org.maven.ide.eclipse.project.configurator.AbstractProjectConfigurator;
 import org.osgi.service.prefs.BackingStoreException;
 import org.osgi.service.prefs.Preferences;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class ProjectConfigurator extends AbstractProjectConfigurator {
 
+	private final static Logger LOGGER = LoggerFactory.getLogger(ProjectConfigurator.class);
+	
 	public ProjectConfigurator() {
 
 	}
@@ -64,7 +66,7 @@ public abstract class ProjectConfigurator extends AbstractProjectConfigurator {
 				} catch (CoreException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
-					console.logError(e1.getMessage());
+					LOGGER.error(e1.getMessage());
 				}
 
 				// add artifact and its dependencies to list of jars
@@ -72,7 +74,7 @@ public abstract class ProjectConfigurator extends AbstractProjectConfigurator {
 					try {
 						jars.add(artifact.getFile().toURI().toURL());
 					} catch (MalformedURLException e) {
-						console.logError("Could not create URL for artifact: "
+						LOGGER.error("Could not create URL for artifact: "
 								+ artifact.getFile());
 					}
 				}
@@ -94,7 +96,7 @@ public abstract class ProjectConfigurator extends AbstractProjectConfigurator {
 			BackingStoreException {
 
 		if (inputStream == null) {
-			console.logMessage("No settings for: " + pref);
+			LOGGER.info("No settings for: " + pref);
 			return;
 		}
 		Preferences preferences = getPrefences(project, pref);
@@ -113,7 +115,7 @@ public abstract class ProjectConfigurator extends AbstractProjectConfigurator {
 
 		preferences.flush();
 
-		console.logMessage("Update preferences: " + pref);
+		LOGGER.info("Update preferences: " + pref);
 	}
 
 	protected void addClassesAndResourcesToWTPDeployment(IProject project,
@@ -124,7 +126,7 @@ public abstract class ProjectConfigurator extends AbstractProjectConfigurator {
 		IContainer srcFolder = rootFolder.getUnderlyingFolder();
 		if (srcFolder.exists()) {
 			if ("src".equals(srcFolder.getName())) {
-				console.logError("Removed " + srcFolder.getName()
+				LOGGER.error("Removed " + srcFolder.getName()
 						+ " from wtp deployment!");
 				rootFolder.removeLink(new Path("src"), IVirtualResource.FOLDER,
 						monitor);
@@ -143,7 +145,7 @@ public abstract class ProjectConfigurator extends AbstractProjectConfigurator {
 			if (project.getFolder("src/main/resources").exists()) {
 				rootFolder.createLink(new Path("src/main/resources"),
 						IVirtualResource.FOLDER, monitor);
-				console.logMessage("Linked src/main/resources to "
+				LOGGER.info("Linked src/main/resources to "
 						+ rootFolder.getName() + "  from wtp deployment!");
 			}
 		} else {
@@ -155,7 +157,7 @@ public abstract class ProjectConfigurator extends AbstractProjectConfigurator {
 						pathAsString, basedir);
 				rootFolder.createLink(new Path(pathAsString),
 						IVirtualResource.FOLDER, monitor);
-				console.logMessage("Linked " + pathAsString + "  to "
+				LOGGER.info("Linked " + pathAsString + "  to "
 						+ rootFolder.getName() + "  from wtp deployment!");
 			}
 		}

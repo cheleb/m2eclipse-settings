@@ -16,14 +16,19 @@ import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.m2e.core.project.MavenProjectChangedEvent;
+import org.eclipse.m2e.core.project.configurator.ProjectConfigurationRequest;
 import org.eclipse.wst.common.componentcore.ComponentCore;
 import org.eclipse.wst.common.componentcore.resources.IVirtualComponent;
 import org.eclipse.wst.common.componentcore.resources.IVirtualFolder;
-import org.maven.ide.eclipse.project.MavenProjectChangedEvent;
-import org.maven.ide.eclipse.project.configurator.ProjectConfigurationRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class WTPDeploymentProjectConfigurator extends ProjectConfigurator {
 
+	
+	private final static Logger LOGGER = LoggerFactory.getLogger(WTPDeploymentProjectConfigurator.class);
+	
 	private static final IPath SRC_MAIN_WEBAPP = new Path("src"
 			+ File.separator + "main" + File.separator + "webapp");
 
@@ -48,6 +53,11 @@ public class WTPDeploymentProjectConfigurator extends ProjectConfigurator {
 		Plugin warPlugin = mavenProject
 				.getPlugin("org.apache.maven.plugins:maven-war-plugin");
 
+		if(warPlugin==null) {
+			LOGGER.info("Not a war");
+			return;
+		}
+		
 		IPath src = null;
 		if (warPlugin != null) {
 			Xpp3Dom configurationXpp3Dom = (Xpp3Dom) warPlugin
@@ -72,7 +82,7 @@ public class WTPDeploymentProjectConfigurator extends ProjectConfigurator {
 		deployWebAppResources(mavenProject, project, monitor, rootFolder, src);
 
 		WTPMavenHelper.deployTargetJNLP(mavenProject, monitor, rootFolder,
-				console, src);
+				 src);
 
 		customizeWebapp(projectConfigurationRequest, component);
 
@@ -159,15 +169,15 @@ public class WTPDeploymentProjectConfigurator extends ProjectConfigurator {
 	public void mavenProjectChanged(MavenProjectChangedEvent event,
 			IProgressMonitor monitor) throws CoreException {
 		if (event == null) {
-			console.logMessage("===> No event");
+			LOGGER.info("===> No event");
 		} else if (event.getMavenProject() == null) {
-			console.logMessage("===> No maven project facade");
+			LOGGER.info("===> No maven project facade");
 		} else if (event.getMavenProject().getMavenProject() == null) {
-			console.logMessage("===> No event maven project");
+			LOGGER.info("===> No event maven project");
 		} else if (event.getMavenProject().getMavenProject().getArtifactId() == null) {
-			console.logMessage("===> No artifactId");
+			LOGGER.info("===> No artifactId");
 		} else {
-			console.logMessage(event.getMavenProject().getMavenProject()
+			LOGGER.info(event.getMavenProject().getMavenProject()
 					.getArtifactId()
 					+ "\n" + event.getSource() + " changed");
 		}

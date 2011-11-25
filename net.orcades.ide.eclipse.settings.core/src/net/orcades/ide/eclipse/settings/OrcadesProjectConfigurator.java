@@ -27,10 +27,8 @@ import net.orcades.ide.eclipse.settings.model.SettingFile;
 
 import org.apache.maven.model.Build;
 import org.apache.maven.model.Plugin;
-import org.apache.maven.model.Resource;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
-import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
@@ -42,19 +40,22 @@ import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.m2e.core.MavenPlugin;
+import org.eclipse.m2e.core.embedder.MavenRuntime;
+import org.eclipse.m2e.core.embedder.MavenRuntimeManager;
+import org.eclipse.m2e.core.project.configurator.ProjectConfigurationRequest;
 import org.eclipse.wst.common.componentcore.ComponentCore;
 import org.eclipse.wst.common.componentcore.resources.IVirtualComponent;
 import org.eclipse.wst.common.componentcore.resources.IVirtualFolder;
-import org.eclipse.wst.common.componentcore.resources.IVirtualResource;
-import org.maven.ide.eclipse.MavenPlugin;
-import org.maven.ide.eclipse.embedder.MavenRuntime;
-import org.maven.ide.eclipse.embedder.MavenRuntimeManager;
-import org.maven.ide.eclipse.project.configurator.ProjectConfigurationRequest;
 import org.osgi.service.prefs.BackingStoreException;
 import org.osgi.service.prefs.Preferences;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class OrcadesProjectConfigurator extends ProjectConfigurator {
 
+	private final static Logger LOGGER = LoggerFactory.getLogger(OrcadesProjectConfigurator.class);
+	
 	private static final Pattern PREF_PATTERN = Pattern
 			.compile("^\\.settings/(.*)\\.prefs$");
 
@@ -66,7 +67,6 @@ public class OrcadesProjectConfigurator extends ProjectConfigurator {
 	public void configure(
 			ProjectConfigurationRequest projectConfigurationRequest,
 			IProgressMonitor monitor) throws CoreException {
-		console.showConsole();
 		IProject project = projectConfigurationRequest.getProject();
 
 		Build build = projectConfigurationRequest.getMavenProject().getBuild();
@@ -76,15 +76,13 @@ public class OrcadesProjectConfigurator extends ProjectConfigurator {
 		}
 		Map<String, Plugin> buildPluginMap = build.getPluginsAsMap();
 
-		configureEncoding(project, buildPluginMap);
-
 		configureEclipseMeta(project, buildPluginMap, monitor);
 
 		// String location =
 		// projectConfigurationRequest.getMavenProject().getBasedir().getAbsolutePath();
 		//
 		// for(String goal : appliedGoals) {
-		// console.logMessage("mvn " + goal);
+		// LOGGER.info("mvn " + goal);
 		// }
 		// cli.doMain(appliedGoals, location, null, null);
 
@@ -95,7 +93,7 @@ public class OrcadesProjectConfigurator extends ProjectConfigurator {
 			IVirtualComponent component = ComponentCore
 					.createComponent(project);
 			if (component == null) {
-				console.logMessage("Not a WTP Component!");
+				LOGGER.info("Not a WTP Component!");
 			} else {
 				IVirtualFolder rootFolder = component.getRootFolder();
 				addClassesAndResourcesToWTPDeployment(project, mavenProject,
@@ -138,7 +136,7 @@ public class OrcadesProjectConfigurator extends ProjectConfigurator {
 					inStreamReader.close();
 					inputStream.close();
 				} catch (IOException e) {
-					console.logError(e.getMessage());
+					LOGGER.error(e.getMessage());
 				}
 
 			}
@@ -159,7 +157,7 @@ public class OrcadesProjectConfigurator extends ProjectConfigurator {
 			Map<String, Plugin> buildPluginMap, IProgressMonitor monitor) {
 		if (!buildPluginMap
 				.containsKey("org.apache.maven.plugins:maven-eclipse-plugin")) {
-			console.logMessage("Could not eclipse settings, consider org.apache.maven.plugins:maven-eclipse-plugin!");
+			LOGGER.info("Could not eclipse settings, consider org.apache.maven.plugins:maven-eclipse-plugin!");
 			return false;
 		}
 		Plugin eclipsePlugin = buildPluginMap
@@ -173,7 +171,7 @@ public class OrcadesProjectConfigurator extends ProjectConfigurator {
 		for (SettingFile settingFile : settingFiles) {
 			InputStream contentStream = openStream(settingFile, classLoader);
 			if (contentStream == null) {
-				console.logError("Could not find content for: " + settingFile);
+				LOGGER.error("Could not find content for: " + settingFile);
 			} else {
 				try {
 					if (".settings/org.eclipse.jdt.core.prefs"
@@ -188,15 +186,15 @@ public class OrcadesProjectConfigurator extends ProjectConfigurator {
 						}
 					}
 				} catch (IOException e) {
-					console.logError(e.getMessage());
+					LOGGER.error(e.getMessage());
 				} catch (BackingStoreException e) {
-					console.logError(e.getMessage());
+					LOGGER.error(e.getMessage());
 				} finally {
 					if (contentStream != null) {
 						try {
 							contentStream.close();
 						} catch (IOException e) {
-							console.logError(e.getMessage());
+							LOGGER.error(e.getMessage());
 						}
 					}
 				}
@@ -271,7 +269,7 @@ public class OrcadesProjectConfigurator extends ProjectConfigurator {
 			IProgressMonitor monitor) {
 		IFolder bin = project.getFolder(path);
 		if (bin.exists()) {
-			console.logError(path + " was existing ...");
+			LOGGER.error(path + " was existing ...");
 			try {
 				bin.delete(true, monitor);
 			} catch (CoreException e) {
@@ -290,19 +288,19 @@ public class OrcadesProjectConfigurator extends ProjectConfigurator {
 			try {
 				return settingFile.getUrl().openStream();
 			} catch (IOException e) {
-				console.logError(e.getMessage());
+				LOGGER.error(e.getMessage());
 				return null;
 			}
 		}
 		if (settingFile.getLocation() != null) {
 
 			if (classLoader == null) {
-				console.logMessage("No classloader to provide configuration file!");
+				LOGGER.info("No classloader to provide configuration file!");
 				return null;
 			}
 			return classLoader.getResourceAsStream(settingFile.getLocation());
 		}
-		console.logMessage("Could not find the stream to provide configuration file: "
+		LOGGER.info("Could not find the stream to provide configuration file: "
 				+ settingFile);
 		return null;
 	}
@@ -314,7 +312,7 @@ public class OrcadesProjectConfigurator extends ProjectConfigurator {
 		}
 		Xpp3Dom[] files = additionalConfig.getChildren("file");
 
-		return SettingFile.fromXpp3doms(files, console);
+		return SettingFile.fromXpp3doms(files);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -322,49 +320,7 @@ public class OrcadesProjectConfigurator extends ProjectConfigurator {
 		return javaProject.getOptions(false);
 	}
 
-	private boolean configureEncoding(IProject project,
-			Map<String, Plugin> buildPluginMap) {
-		if (!buildPluginMap
-				.containsKey("org.apache.maven.plugins:maven-compiler-plugin")) {
-			console.logMessage("Could not force the encoding, consider org.apache.maven.plugins:maven-compiler-plugin <encoding>");
-			return false;
-		}
-		String encoding = extractEncoding((Xpp3Dom) buildPluginMap.get(
-				"org.apache.maven.plugins:maven-compiler-plugin")
-				.getConfiguration());
-		if (encoding == null) {
-			console.logMessage("Could not force the encoding, org.apache.maven.plugins:maven-compiler-plugin found but without <encoding>");
-			return false;
-		}
-
-		Preferences preferences = Platform
-				.getPreferencesService()
-				.getRootNode()
-				.node("project/" + project.getName()
-						+ "/org.eclipse.core.resources/encoding");
-		preferences.put("<project>", encoding);
-
-		try {
-			preferences.flush();
-			return true;
-		} catch (BackingStoreException e) {
-			console.logError(e.getMessage());
-		}
-
-		return false;
-	}
-
-	private String extractEncoding(Xpp3Dom xpp3Dom) {
-
-		if (xpp3Dom == null) {
-			return null;
-		}
-		Xpp3Dom encodingDom = xpp3Dom.getChild("encoding");
-		if (encodingDom != null)
-			return encodingDom.getValue();
-		return null;
-	}
-
+	
 	/**
 	 * List directory contents for a resource folder. Not recursive. This is
 	 * basically a brute-force implementation. Works for regular files and also

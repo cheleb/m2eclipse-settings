@@ -6,9 +6,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.codehaus.plexus.util.xml.Xpp3Dom;
-import org.maven.ide.eclipse.core.MavenConsole;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 public class SettingFile {
+	
+	
+	private final static Logger LOGGER = LoggerFactory.getLogger(SettingFile.class); 
+	
 	private String path;
 	private String contents;
 	private String location;
@@ -30,8 +36,7 @@ public class SettingFile {
 		this.contents = contents;
 	}
 
-	public static List<SettingFile> fromXpp3doms(Xpp3Dom[] files,
-			MavenConsole console) {
+	public static List<SettingFile> fromXpp3doms(Xpp3Dom[] files) {
 		List<SettingFile> settingFiles = new ArrayList<SettingFile>();
 		for (Xpp3Dom file : files) {
 			SettingFile settingFile = new SettingFile();
@@ -48,13 +53,13 @@ public class SettingFile {
 					url = new URL(content.getValue());
 					settingFile.setURL(url);
 				} catch (MalformedURLException e) {
-					console.logError(e.getMessage());
+					LOGGER.error(e.getMessage());
 				}
 
 			} else if ((content = file.getChild("location")) != null) {
 				settingFile.setLocation(content.getValue());
 			} else {
-				console.logError("Could not find content for: " + settingFile);
+				LOGGER.error("Could not find content for: " + settingFile);
 				continue;
 			}
 			settingFiles.add(settingFile);
